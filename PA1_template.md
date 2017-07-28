@@ -1,35 +1,46 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
 
-```{r}
+
+```r
 library(data.table)
 options(scipen=999)
 data = fread('activity.csv')
 summary(data)
 ```
 
+```
+##      steps            date              interval     
+##  Min.   :  0.00   Length:17568       Min.   :   0.0  
+##  1st Qu.:  0.00   Class :character   1st Qu.: 588.8  
+##  Median :  0.00   Mode  :character   Median :1177.5  
+##  Mean   : 37.38                      Mean   :1177.5  
+##  3rd Qu.: 12.00                      3rd Qu.:1766.2  
+##  Max.   :806.00                      Max.   :2355.0  
+##  NA's   :2304
+```
+
 
 ## What is mean total number of steps taken per day?
 
-```{r}
+
+```r
 days = split(data, factor(data$date))
 counts = sapply(days, function (day) sum(day$steps, na.rm = TRUE))
 hist(counts)
 ```
 
-The mean of the total number of steps take per day is `r round(mean(counts), 2)` and the median is `r median(counts)`
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+The mean of the total number of steps take per day is 9354.23 and the median is 10395
 
 
 ## What is the average daily activity pattern?
 
-```{r}
+
+```r
 get_interval_means = function(days) {
   intervals = list()
   for (day in days) {
@@ -57,16 +68,19 @@ plot(sapply(rep(1:288), get_interval_from_index), interval_means,
      xlab='Five minute interval', ylab='Average number of steps', type='l')
 ```
 
-The interval with the largest average number of steps is `r i = match(max(interval_means), interval_means); get_interval_from_index(i)` with `r round(interval_means[i], 2)` steps
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+The interval with the largest average number of steps is 835 with 206.17 steps
 
 
 ## Imputing missing values
 
-There are a total of `r length(data[is.na(data$steps),]$steps)` NA values in this data set.
+There are a total of 2304 NA values in this data set.
 
 To remove these values i will use the average number of steps for all days on that interval in their place.
 
-```{r}
+
+```r
 padded_data = cbind(data)
 for (i in 1:length(padded_data$steps)) {
     if(is.na(padded_data[i,]$steps)) {
@@ -78,19 +92,33 @@ for (i in 1:length(padded_data$steps)) {
 summary(padded_data)
 ```
 
-```{r}
+```
+##      steps            date              interval     
+##  Min.   :  0.00   Length:17568       Min.   :   0.0  
+##  1st Qu.:  0.00   Class :character   1st Qu.: 588.8  
+##  Median :  0.00   Mode  :character   Median :1177.5  
+##  Mean   : 37.38                      Mean   :1177.5  
+##  3rd Qu.: 27.00                      3rd Qu.:1766.2  
+##  Max.   :806.00                      Max.   :2355.0
+```
+
+
+```r
 padded_days = split(padded_data, factor(padded_data$date))
 padded_counts = sapply(padded_days, function (day) sum(day$steps, na.rm = TRUE))
 hist(padded_counts)
 ```
 
-The mean of the total number of steps take per day is `r round(mean(padded_counts), 2)` and the median is `r median(padded_counts)`
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+The mean of the total number of steps take per day is 10765.64 and the median is 10762
 
 By replacing NA values we the average for that time interval we have created a smother distribution of total step counts.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r}
+
+```r
 padded_data[, isweekend:=weekdays(suppressWarnings(strptime(date, '%Y-%m-%d')), abbreviate = FALSE) %in% c('Saturday', 'Sunday')]
 weekdays = split(padded_data, factor(padded_data$isweekend, labels=c('weekday', 'weekend')))
 weekend_interval_means = get_interval_means(split(weekdays$weekend, weekdays$weekend$date))
@@ -104,3 +132,5 @@ library(lattice)
 xyplot(d$average_steps ~ d$interval | d$weekday, layout=c(1,2), type="l",
        xlab='interval', ylab='average number of steps')
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
